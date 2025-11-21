@@ -1,26 +1,50 @@
 <?php
 
-namespace ProNetwork\Http\Controllers;
+namespace ProNetworkUtilitiesSecurityAnalytics\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use ProNetwork\Services\NewsletterService;
+use ProNetworkUtilitiesSecurityAnalytics\Http\Requests\NewsletterSubscribeRequest;
+use ProNetworkUtilitiesSecurityAnalytics\Http\Requests\NewsletterUnsubscribeRequest;
 
 class NewsletterController extends Controller
 {
-    public function __construct(protected NewsletterService $service)
+    public function __construct(protected NewsletterService $newsletterService)
     {
     }
 
-    public function subscribe(Request $request)
+    public function manage()
     {
-        $data = $request->validate(['email' => 'required|email']);
-        return response()->json($this->service->subscribe($data['email'], optional($request->user())->id));
+        return view('pro_network::newsletters.manage');
     }
 
-    public function unsubscribe(Request $request)
+    public function subscribe(NewsletterSubscribeRequest $request)
     {
-        $data = $request->validate(['email' => 'required|email']);
-        return response()->json($this->service->unsubscribe($data['email']));
+        $subscription = $this->newsletterService->subscribe(
+            $request->validated('email'),
+            $request->user()->id ?? null,
+            $request->validated('source')
+        );
+
+        return response()->json([
+            'subscribed' => true,
+            'subscription' => $subscription,
+        ]);
+    }
+
+    public function unsubscribe(NewsletterUnsubscribeRequest $request)
+    {
+        $this->newsletterService->unsubscribe($request->validated('email'));
+
+        return response()->json([
+            'unsubscribed' => true,
+            'email' => $request->validated('email'),
+        ]);
+    }
+
+    public function adminIndex()
+    {
+        return view('pro_network::newsletters.admin.index');
     }
 }
