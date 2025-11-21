@@ -3,11 +3,15 @@
 use Illuminate\Support\Facades\Route;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\CompanyProfileController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\ConnectionsController;
+use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\AnalyticsController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\HashtagController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\MarketplaceDisputeController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\MarketplaceEscrowController;
+use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\NewsletterController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\PostEnhancementController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\ProfessionalProfileController;
+use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\AgeVerificationController;
+use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\SecurityModerationController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\StoryEnhancementController;
 
 Route::middleware(['web', 'auth'])->prefix('pro-network')->group(function () {
@@ -35,4 +39,11 @@ Route::middleware(['web', 'auth'])->prefix('pro-network')->group(function () {
     Route::get('/posts/polls/create', [PostEnhancementController::class, 'createPoll']);
     Route::get('/posts/threads/create', [PostEnhancementController::class, 'createThread']);
     Route::get('/posts/celebrate/create', [PostEnhancementController::class, 'createCelebrate']);
+
+    Route::get('/analytics', [AnalyticsController::class, 'overview'])->middleware('can:viewAnalytics');
+    Route::get('/security/log', [SecurityModerationController::class, 'securityLog'])->middleware('can:viewSecurity');
+    Route::get('/moderation', [SecurityModerationController::class, 'moderationQueue'])->middleware('can:moderate');
+    Route::get('/newsletters/manage', [NewsletterController::class, 'manage']);
+    Route::get('/admin/newsletters', [NewsletterController::class, 'adminIndex'])->middleware('can:viewAnalytics');
+    Route::any('/age-verification/callback', [AgeVerificationController::class, 'callback']);
 });

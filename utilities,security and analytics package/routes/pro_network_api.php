@@ -3,15 +3,20 @@
 use Illuminate\Support\Facades\Route;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\CompanyProfileController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\ConnectionsController;
+use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\ChatEnhancementController;
+use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\AnalyticsController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\HashtagController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\MarketplaceDisputeController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\MarketplaceEscrowController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\MusicLibraryController;
+use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\NewsletterController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\PostEnhancementController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\ProfessionalProfileController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\RecommendationsController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\ReactionsController;
+use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\SecurityModerationController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\StoryEnhancementController;
+use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\AgeVerificationController;
 
 Route::middleware(['api', 'auth:sanctum'])->prefix('api/pro-network')->group(function () {
     Route::get('/connections', [ConnectionsController::class, 'list']);
@@ -58,4 +63,26 @@ Route::middleware(['api', 'auth:sanctum'])->prefix('api/pro-network')->group(fun
 
     Route::get('/music-library', [MusicLibraryController::class, 'index']);
     Route::post('/music-library/search', [MusicLibraryController::class, 'search']);
+
+    Route::get('/chat/conversations', [ChatEnhancementController::class, 'listConversations']);
+    Route::get('/chat/conversations/{conversation}', [ChatEnhancementController::class, 'showConversation']);
+    Route::delete('/chat/conversations/{conversation}', [ChatEnhancementController::class, 'deleteConversation']);
+    Route::post('/chat/conversations/{conversation}/clear', [ChatEnhancementController::class, 'clearConversation']);
+    Route::post('/chat/settings', [ChatEnhancementController::class, 'updateSettings']);
+    Route::get('/chat/requests', [ChatEnhancementController::class, 'messageRequests']);
+    Route::post('/chat/requests/{request}/accept', [ChatEnhancementController::class, 'acceptRequest']);
+    Route::post('/chat/requests/{request}/decline', [ChatEnhancementController::class, 'declineRequest']);
+
+    Route::post('/analytics/metrics', [AnalyticsController::class, 'metrics'])->middleware('can:viewAnalytics');
+    Route::post('/analytics/series', [AnalyticsController::class, 'series'])->middleware('can:viewAnalytics');
+
+    Route::post('/security/events', [SecurityModerationController::class, 'events'])->middleware('can:viewSecurity');
+    Route::post('/moderation/queue', [SecurityModerationController::class, 'queue'])->middleware('can:moderate');
+    Route::post('/moderation/action', [SecurityModerationController::class, 'moderate'])->middleware('can:moderate');
+
+    Route::post('/newsletters/subscribe', [NewsletterController::class, 'subscribe']);
+    Route::post('/newsletters/unsubscribe', [NewsletterController::class, 'unsubscribe']);
+
+    Route::get('/age-verification/status', [AgeVerificationController::class, 'status']);
+    Route::post('/age-verification/start', [AgeVerificationController::class, 'start']);
 });
