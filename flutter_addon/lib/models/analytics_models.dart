@@ -60,11 +60,17 @@ class AnalyticsSeries {
   });
 
   factory AnalyticsSeries.fromJson(Map<String, dynamic> json) {
+    final data = (json['data'] as Map<String, dynamic>?) ?? {};
+    final points = <AnalyticsChartData>[];
+    data.forEach((key, value) {
+      points.add(AnalyticsChartData(
+        timestamp: DateTime.tryParse(key) ?? DateTime.now(),
+        value: (value as num?) ?? 0,
+      ));
+    });
     return AnalyticsSeries(
-      metric: json['metric'] as String? ?? json['name'] as String? ?? '',
-      points: (json['points'] as List? ?? json['series'] as List? ?? [])
-          .map((e) => AnalyticsChartData.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      metric: json['metric'] as String? ?? json['name'] as String? ?? 'events',
+      points: points,
     );
   }
 

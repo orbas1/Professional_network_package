@@ -43,7 +43,6 @@ class _MyNetworkScreenState extends State<MyNetworkScreen> {
 
   Future<void> _load() async {
     await Future.wait([
-      networkState.loadSummary(),
       networkState.loadConnections(filters: _degreeFilter == 0 ? null : {'degree': _degreeFilter}),
       recommendationsState.load(),
     ]);

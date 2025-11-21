@@ -60,10 +60,14 @@ class SecurityStatus {
 class AgeVerificationStatus {
   final String status;
   final DateTime? verifiedAt;
+  final String? provider;
+  final String? providerReference;
 
   const AgeVerificationStatus({
     required this.status,
     this.verifiedAt,
+    this.provider,
+    this.providerReference,
   });
 
   factory AgeVerificationStatus.fromJson(Map<String, dynamic> json) {
@@ -72,11 +76,15 @@ class AgeVerificationStatus {
       verifiedAt: json['verified_at'] != null
           ? DateTime.tryParse(json['verified_at'].toString())
           : null,
+      provider: json['provider'] as String?,
+      providerReference: json['provider_reference'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() => {
         'status': status,
         if (verifiedAt != null) 'verified_at': verifiedAt!.toIso8601String(),
+        if (provider != null) 'provider': provider,
+        if (providerReference != null) 'provider_reference': providerReference,
       };
 }

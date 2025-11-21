@@ -30,6 +30,9 @@ class BaseApiService {
 
   Uri _uri(String path) => Uri.parse('$baseUrl$path');
 
+  Uri _uriWithQuery(String path, Map<String, dynamic> query) =>
+      _uri(query.isEmpty ? path : '$path?${Uri(queryParameters: query.map((k, v) => MapEntry(k, v.toString()))).query}');
+
   Future<Map<String, String>> _headers() async {
     final token = await tokenProvider?.call();
     return {
@@ -58,6 +61,12 @@ class BaseApiService {
 
   Future<dynamic> get(String path) async {
     final response = await _client.get(_uri(path), headers: await _headers());
+    return _handleResponse(response);
+  }
+
+  Future<dynamic> getWithQuery(String path, Map<String, dynamic> query) async {
+    final response =
+        await _client.get(_uriWithQuery(path, query), headers: await _headers());
     return _handleResponse(response);
   }
 
