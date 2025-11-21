@@ -1,70 +1,172 @@
-# Functions Overview
+# Technical Map
 
-## Laravel Views
+This document lists the Laravel backend surface and Flutter addon pieces for the Professional Network Utilities, Security & Analytics addon. Use it as a quick index when enabling features or integrating with Sociopro hosts.
 
-| View Name | Path | Used By | Description |
-| --- | --- | --- | --- |
-| pro_network::my_network.index | resources/views/my_network/index.blade.php | ConnectionsController@index | LinkedIn-style “My Network” summary with degree counts and suggested actions. |
-| pro_network::my_network.connections | resources/views/my_network/connections.blade.php | ConnectionsController@list | Paginated connections list with filters. |
-| pro_network::my_network.mutual | resources/views/my_network/mutual.blade.php | ConnectionsController@mutual | Mutual connections between the viewer and a target user. |
-| pro_network::profile.show | resources/views/profile/show.blade.php | ProfessionalProfileController@show | Professional profile overview with skills, history, and interests. |
-| pro_network::profile.edit | resources/views/profile/edit.blade.php | ProfessionalProfileController@edit | Profile editing form for enhanced professional fields. |
-| pro_network::company.show | resources/views/company/show.blade.php | CompanyProfileController@show, CompanyProfileController@update | Upgraded company/agency profile with jobs, gigs, and employee counts. |
-| pro_network::escrow.show | resources/views/escrow/show.blade.php | MarketplaceEscrowController@showByOrder, @open, @release, @refund | Escrow lifecycle UI for marketplace orders and milestones. |
-| pro_network::disputes.create | resources/views/disputes/create.blade.php | MarketplaceDisputeController@create | Start a dispute against an order. |
-| pro_network::disputes.show | resources/views/disputes/show.blade.php | MarketplaceDisputeController@show, @store, @reply, @resolve | Dispute timeline, replies, and resolution actions. |
-| pro_network::stories.viewer | resources/views/stories/viewer.blade.php | StoryEnhancementController@viewer | Enhanced story viewer shell with progress and navigation. |
-| pro_network::stories.creator | resources/views/stories/creator.blade.php | StoryEnhancementController@creator | Enhanced story creation experience with overlays and music. |
-| pro_network::posts.polls.create | resources/views/posts/polls/create.blade.php | PostEnhancementController@createPoll | Poll composer page. |
-| pro_network::posts.threads.create | resources/views/posts/threads/create.blade.php | PostEnhancementController@createThread | Threaded post composer. |
-| pro_network::posts.celebrate.create | resources/views/posts/celebrate/create.blade.php | PostEnhancementController@createCelebrate | “Celebrate an occasion” composer. |
-| pro_network::hashtags.show | resources/views/hashtags/show.blade.php | HashtagController@show | Hashtag listing page. |
-| pro_network::analytics.overview | resources/views/analytics/overview.blade.php | AnalyticsController@overview | Analytics dashboard shell for cards and charts. |
-| pro_network::security.log | resources/views/security/log.blade.php | SecurityModerationController@securityLog | Security event log. |
-| pro_network::moderation.queue | resources/views/moderation/queue.blade.php | SecurityModerationController@moderationQueue | Moderation queue listing flagged items. |
-| pro_network::newsletters.manage | resources/views/newsletters/manage.blade.php | NewsletterController@manage | User-facing newsletter subscription management. |
-| pro_network::newsletters.admin.index | resources/views/newsletters/admin/index.blade.php | NewsletterController@adminIndex | Admin view for newsletters and subscribers. |
+## 1. Laravel (Backend)
 
-## Flutter Screens & Widgets
+### Connections / My Network
+- **Domain Service:** `ProNetwork\Services\ConnectionService` – summaries, first/second/third degree, mutual connections.
+- **Controllers:** `ConnectionsController@index|list|mutual`.
+- **Routes:**
+  - Web: `/pro-network/my-network`, `/pro-network/my-network/connections`, `/pro-network/my-network/mutual/{user}`.
+  - API: `/api/pro-network/connections`, `/api/pro-network/connections/mutual/{user}`.
+- **Views:** `pro_network::my_network.index`, `pro_network::my_network.connections`, `pro_network::my_network.mutual`.
+- **Config flags:** `features.connections_graph`.
 
-| Screen | Purpose & Key UI Elements | State/Services | Key Endpoints |
-| --- | --- | --- | --- |
-| MyNetworkScreen / ConnectionsListScreen / MutualConnectionsScreen | Degree cards, filter chips, pull-to-refresh, recommendation accept/dismiss buttons, and mutuals. | MyNetworkState, RecommendationsState, AnalyticsClient | `/api/pro-network/connections`, `/api/pro-network/connections/mutual/{user}`, `/api/pro-network/recommendations/*` |
-| ProfessionalProfileScreen / EditProfessionalProfileScreen | Profile header/tagline, location, top skills as chips, experience/education/certifications/references, DBS/availability toggles, edit form with validation. | ProfessionalProfileState, AnalyticsClient | `/api/pro-network/profile/professional` (GET/POST) |
-| CompanyProfileScreen | Company overview, logo placeholder, employee counts, sample employees, gigs/jobs/projects sections with refresh. | CompanyProfileState, AnalyticsClient | `/api/pro-network/company/{company}` |
-| OrderEscrowScreen | Escrow status card, milestones list, release/refund CTAs with analytics hooks. | EscrowState, AnalyticsClient | `/api/pro-network/marketplace/orders/{order}/escrow`, `/api/pro-network/marketplace/escrow/{escrow}/release`, `/api/pro-network/marketplace/escrow/{escrow}/refund` |
-| DisputeDetailScreen | Dispute header, chronological message list, composer for replies, resolution indicators. | DisputesState, AnalyticsClient | `/api/pro-network/marketplace/disputes/{dispute}`, `/api/pro-network/marketplace/disputes/{dispute}/reply` |
-| StoriesViewerScreen / StoryCreatorScreen | Full-screen story player with progress bars, tap navigation, viewer sheet, music chip; creator includes duration slider, stickers/replies toggles, music picker. | StoriesState, StoryCreationState, MusicLibraryApi (optional), AnalyticsClient | `/api/pro-network/stories`, `/api/pro-network/stories/{story}/viewers`, `/api/pro-network/music-library` |
-| CreatePollScreen / ThreadedPostScreen / ReshareSheet / CelebrateOccasionComposer | Poll creation, threaded composer, reshare bottom sheet, and celebration composer with analytics events. | PostsEnhancementState, AnalyticsClient | `/api/pro-network/posts/polls`, `/api/pro-network/posts/threads`, `/api/pro-network/posts/reshare`, `/api/pro-network/posts/celebrate` |
-| ChatListScreen / ChatDetailScreen / MessageRequestsScreen | Conversation list with call buttons, detailed thread with emoji/GIF/voice/attachment triggers, request inbox with accept/decline actions. | ChatState, AnalyticsClient | `/api/pro-network/chat/conversations`, `/api/pro-network/chat/conversations/{conversation}`, `/api/pro-network/chat/requests`, `/api/pro-network/chat/settings` |
-| AnalyticsOverviewScreen / EntityAnalyticsScreen | Summary metric cards, line chart for trends, filterable entity metrics. | AnalyticsState, AnalyticsClient | `/api/pro-network/analytics/metrics`, `/api/pro-network/analytics/series` |
-| ModerationQueueScreen / ModerationDetailScreen | Flagged content list with filters and per-item approve/hide/block actions. | ModerationState, AnalyticsClient | `/api/pro-network/moderation/queue`, `/api/pro-network/moderation/action` |
-| NewsletterSettingsScreen | Newsletter list with toggles for subscribe/unsubscribe, feedback messages. | NewsletterState, AnalyticsClient | `/api/pro-network/newsletters/subscribe`, `/api/pro-network/newsletters/unsubscribe` |
-| AccountSecurityScreen | Professional/Creator toggle, security event summary, age verification status and start action, reaction score chip. | SecurityAndVerificationState, ProfessionalProfileState, AnalyticsClient | `/api/pro-network/security/events`, `/api/pro-network/age-verification/status`, `/api/pro-network/age-verification/start` |
+### Recommendations
+- **Domain Service:** `RecommendationService` – people/companies/groups/content suggestions.
+- **Controller:** `RecommendationsController@people|companies|groups|content`.
+- **Routes:** API `/api/pro-network/recommendations/*` guarded by `pro-network.feature:recommendations`.
+- **Config flag:** `features.recommendations`.
 
-## Integration Guide
+### Professional Profiles & Company Pages
+- **Domain Service:** `ProfileEnhancementService` for professional profiles; `AccountTypeService` for account tiers; `Company` logic via `CompanyProfileController`.
+- **Controllers:** `ProfessionalProfileController@show|edit|update`, `CompanyProfileController@show|update`.
+- **Routes:**
+  - Web: `/pro-network/profile/professional`, `/pro-network/profile/professional/{user}`, `/pro-network/profile/professional/edit`, `/pro-network/company/{company}`.
+  - API: `/api/pro-network/profile/professional` (GET/POST), `/api/pro-network/company/{company}` (GET/POST, update guarded by policy).
+- **Views:** `pro_network::profile.show`, `pro_network::profile.edit`, `pro_network::company.show`.
+- **Models:** `ProfessionalProfile`, `ProfileSkill`, `ProfileCertification`, `ProfileEducationHistory`, `ProfileWorkHistory`, `ProfileInterest`, `ProfileBackgroundCheck`, `ProfileOpportunity`, `ProfileReference`, `CompanyProfile`, `CompanyEmployee`, `UserAccountType`, `UserFeatureFlag`.
+- **Config flag:** `features.profile_professional_upgrades`, `features.account_types`.
 
-### Laravel package
-1. Install and publish assets: `php artisan vendor:publish --provider="ProNetwork\\ProNetworkUtilitiesSecurityAnalyticsServiceProvider"`.
-2. Run migrations: `php artisan migrate` and seed defaults if provided.
-3. Protect routes with `auth`; add `can:*` middleware for moderation/security/analytics dashboards as appropriate.
-4. Configure feature flags and storage in `config/pro_network_utilities_security_analytics.php` (Cloudflare R2/Wasabi/local), and select your analytics driver and security settings (rate limiting, GDPR logging, malware scanning hooks).
-5. Blade views live under `pro_network::`; publish or override them in your host app as needed.
+### Marketplace Escrow & Disputes
+- **Domain Service:** `MarketplaceEscrowDomain` – escrow lifecycle, milestones, refunds, dispute hooks.
+- **Controllers:** `MarketplaceEscrowController@open|release|refund|showByOrder`, `MarketplaceDisputeController@create|store|show|reply|resolve`.
+- **Routes:**
+  - Web: `/pro-network/marketplace/orders/{order}/escrow`, `/pro-network/marketplace/orders/{order}/disputes/create`, `/pro-network/marketplace/disputes/{dispute}`.
+  - API: `/api/pro-network/marketplace/orders/{order}/escrow/open`, `/api/pro-network/marketplace/escrow/{escrow}/release`, `/api/pro-network/escrow/{escrow}/refund`, `/api/pro-network/marketplace/orders/{order}/disputes`, `/api/pro-network/marketplace/disputes/{dispute}`, `/api/pro-network/marketplace/disputes/{dispute}/reply`, `/api/pro-network/marketplace/disputes/{dispute}/resolve`.
+- **Views:** `pro_network::escrow.show`, `pro_network::disputes.create`, `pro_network::disputes.show`.
+- **Models:** `MarketplaceEscrow`, `MarketplaceMilestone`, `MarketplaceTransaction`, `MarketplaceDispute`, `MarketplaceDisputeMessage`.
+- **Config flag:** `features.marketplace_escrow`.
 
-### Flutter addon
-1. Add the package (path or git) to `pubspec.yaml`, then `flutter pub get`.
-2. Provide API clients with base URL + auth token provider; wrap screens with `ChangeNotifierProvider` instances for each state (e.g., `MyNetworkState`, `ProfessionalProfileState`, `ChatState`).
-3. Import `proNetworkMenuItems` and merge into your drawer/tab model; register `ProNetworkRoutes.builders(analyticsClient)` on your router so route names map to widgets.
-4. Share a single `AnalyticsClient` to log screen/action events; optionally attach device/app metadata via the API client for security endpoints.
-5. Wire chat, live, and stories to your WebSocket/RTC layer if present; the addon is transport-agnostic and expects the host to provide media pickers.
+### Stories & Live Enhancements
+- **Domain Services:** `StoryEnhancementService` (stories), `LiveStreamingWrapper` (participants/donations).
+- **Controllers:** `StoryEnhancementController@store|viewers|viewer|creator`.
+- **Routes:** Web `/pro-network/stories/viewer`, `/pro-network/stories/creator`; API `/api/pro-network/stories` (POST), `/api/pro-network/stories/{story}/viewers` (GET).
+- **Views:** `pro_network::stories.viewer`, `pro_network::stories.creator`.
+- **Models:** `StoryMetadata`, `LiveSession`, `LiveSessionParticipant`, `LiveSessionDonation` (participant/donation data referenced in wrapper), `StoryMusicTrack` via music library.
+- **Config flags:** `features.stories_wrapper`, `features.live_streaming_enhanced`, `features.music_library`.
 
-### Feature toggles and configuration
-- Enable or disable sections via Laravel config flags (network, marketplace, analytics, moderation, newsletters, age verification, chat extras, stories/music).
-- Storage backends: Cloudflare R2, Wasabi, or local disks with presigned URLs; align TTL with mobile uploads.
-- Security: brute-force protection, GDPR-compliant logging, moderation permissions, malware scanning; ensure auth middleware wraps all routes.
-- Analytics driver: built-in tables or forwarders to your central data stack; AnalyticsClient sends lightweight events from Flutter.
+### Post Enhancements (Polls, Threads, Reshare, Celebrate)
+- **Domain Service:** `PostEnhancementService` – polls, threads, reshares, celebrate.
+- **Controller:** `PostEnhancementController@createPoll|storePoll|votePoll|createThread|storeThread|reshare|createCelebrate|storeCelebrate`.
+- **Routes:**
+  - Web creators under `/pro-network/posts/polls/create`, `/pro-network/posts/threads/create`, `/pro-network/posts/celebrate/create`.
+  - API `/api/pro-network/posts/polls`, `/api/pro-network/posts/polls/{poll}/vote`, `/api/pro-network/posts/threads`, `/api/pro-network/posts/reshare`, `/api/pro-network/posts/celebrate`.
+- **Views:** `pro_network::posts.polls.create`, `pro_network::posts.threads.create`, `pro_network::posts.celebrate.create`.
+- **Models:** `PostEnhancement` (poll/thread metadata), `Hashtag`, `HashtagAssignment` for tagging.
+- **Config flag:** `features.post_enhancements`.
 
-## Security & Performance Notes
-- Security: authentication for all routes; `can:moderate` and `can:viewSecurity` protect sensitive endpoints. Flutter surfaces security events, age verification, and account-type toggles without exposing secrets.
-- Performance: index connections/reactions/analytics tables, cache network summaries and recommendations, and paginate lists; Flutter states expose paging filters and pull-to-refresh to avoid heavy payloads.
-- Observability: analytics events appear in `pro_network::analytics.overview`; security logs in `pro_network::security.log`; moderation queues in `pro_network::moderation.queue`. Mobile analytics uses `AnalyticsClient.trackScreen/trackAction` on every major screen and action.
+### Reactions, Dislikes & Scores
+- **Domain Service:** `ReactionsService` – reactions/dislikes, scoring.
+- **Controller:** `ReactionsController@react|unreact|dislike|undislike|profileScore`.
+- **Routes:** API `/api/pro-network/reactions` (POST/DELETE), `/api/pro-network/reactions/dislike` (POST/DELETE), `/api/pro-network/profiles/{user}/reaction-score`.
+- **Models:** `Reaction`, `ReactionAggregate`, `ProfileReactionScore`.
+- **Config flag:** `features.reactions_dislikes_scores`.
+
+### Hashtags & Search SEO
+- **Domain Service:** `HashtagService`, `SearchTagsDomain`, `SearchUpgradeService` for richer search and tagging.
+- **Controller:** `HashtagController@index|search|show`.
+- **Routes:** Web `/pro-network/hashtags/{hashtag}`; API `/api/pro-network/hashtags` (GET), `/api/pro-network/hashtags/search` (POST).
+- **Views:** `pro_network::hashtags.show`.
+- **Models:** `Hashtag`, `HashtagAssignment`.
+- **Config flags:** `features.hashtags`, `features.search_upgrade`.
+
+### Music Library
+- **Domain Service:** `MusicLibraryService` – royalty-free track metadata.
+- **Controller:** `MusicLibraryController@index|search`.
+- **Routes:** API `/api/pro-network/music-library` (GET/POST search).
+- **Models:** `MusicTrack`.
+- **Config flag:** `features.music_library`.
+
+### Recommendations, Notifications, Invites
+- **Domain Services:** `RecommendationService`, `NotificationsWrapper`, `InviteContributorsService`.
+- **Controllers/Routes:** Recommendations covered above; invites and notifications are surfaced via services for host wiring.
+- **Config flags:** `features.recommendations`, `features.notifications_wrapper`, `features.invite_contributors`.
+
+### Analytics Hub
+- **Domain Service:** `AnalyticsService` – `metrics(array $filters)` and `series(array $filters)` plus tracking hooks.
+- **Controller:** `AnalyticsController@overview|metrics|series`.
+- **Routes:** Web `/pro-network/analytics`; API `/api/pro-network/analytics/metrics`, `/api/pro-network/analytics/series` (both `can:viewAnalytics`).
+- **Views:** `pro_network::analytics.overview`.
+- **Models:** `AnalyticsMetric`, `AnalyticsEvent`.
+- **Config flag:** `features.analytics_hub`; driver config under `analytics.*`.
+
+### Security & Moderation
+- **Domain Services:** `SecurityEventService`, `ModerationService`, `BadWord`/`BadWordRule` utilities, `FileScan` hooks, `StorageService` encryption.
+- **Controller:** `SecurityModerationController@securityLog|moderationQueue|events|queue|moderate`.
+- **Routes:** Web `/pro-network/security/log` (`can:viewSecurity`), `/pro-network/moderation` (`can:moderate`); API `/api/pro-network/security/events`, `/api/pro-network/moderation/queue`, `/api/pro-network/moderation/action` with matching gates.
+- **Views:** `pro_network::security.log`, `pro_network::moderation.queue`.
+- **Models:** `SecurityEvent`, `ModerationQueue`, `BadWord`, `BadWordRule`, `FileScan`.
+- **Config flags:** `features.security_hardening`, `features.moderation_tools`, `features.bad_word_checker`, `features.file_scan`, `security.*`.
+
+### Storage & Encryption
+- **Domain Service:** `StorageService` – maps disks, presigned URLs, optional encryption.
+- **Models:** `BaseModel` provides encrypted casting for sensitive columns when enabled.
+- **Config flags:** `features.storage_backends`, `features.db_encryption`, `storage.*`.
+
+### Account Types & Feature Flags
+- **Domain Service:** `AccountTypeService`.
+- **Controllers/Routes:** Integrated within profile/company flows.
+- **Models:** `AccountType`, `UserAccountType`, `UserFeatureFlag`.
+- **Config flag:** `features.account_types`.
+
+### Chat Enhancements
+- **Domain Service:** `ChatEnhancementService` – conversation listing, clearing, message requests, settings.
+- **Controller:** `ChatEnhancementController@listConversations|showConversation|deleteConversation|clearConversation|updateSettings|messageRequests|acceptRequest|declineRequest`.
+- **Routes:** API `/api/pro-network/chat/*` guarded by `pro-network.feature:chat_enhancements`.
+- **Models:** `NetworkMetric` (presence/status metrics leveraged in chat), conversation data handled via Sociopro core identifiers.
+- **Config flag:** `features.chat_enhancements`.
+
+### Newsletter & Invite to Contribute
+- **Domain Service:** `NewsletterService` (subscribe/unsubscribe/admin listing); `InviteContributorsService` (invites).
+- **Controller:** `NewsletterController@manage|adminIndex|subscribe|unsubscribe`.
+- **Routes:** Web `/pro-network/newsletters/manage`; admin newsletters under `/pro-network/analytics` group; API `/api/pro-network/newsletters/subscribe`, `/api/pro-network/newsletters/unsubscribe`.
+- **Views:** `pro_network::newsletters.manage`, `pro_network::newsletters.admin.index`.
+- **Models:** `NewsletterSubscription`, `InviteContribution`.
+- **Config flag:** `features.newsletters`, `features.invite_contributors`.
+
+### Age Verification / KYC
+- **Domain Service:** `AgeVerificationService` – status and start placeholders.
+- **Controller:** `AgeVerificationController@status|start|callback`.
+- **Routes:** Web `/pro-network/age-verification/callback`; API `/api/pro-network/age-verification/status`, `/api/pro-network/age-verification/start`.
+- **Models:** `AgeVerification`, `AgeVerificationLog`.
+- **Config flags:** `features.age_verification`, `age_verification.*`, `kyc.*`.
+
+### Multi-language Wrapper
+- **Domain Service:** `MultiLanguageService` for translating new feature surfaces.
+- **Config flag:** `features.multi_language_wrapper`.
+
+### Service Provider & Middleware
+- **Provider:** `ProNetworkUtilitiesSecurityAnalyticsServiceProvider` merges config, loads migrations/routes/views/translations, registers policies, binds services, and registers `EnsureFeatureEnabled` middleware alias `pro-network.feature`.
+- **Policies:** `MarketplaceEscrowPolicy`, `MarketplaceDisputePolicy`, `CompanyProfilePolicy` plus gates for analytics/security/moderation.
+
+## 2. Flutter Addon
+
+### Models
+Located under `flutter_addon/lib/models/*` covering networking, profiles, companies, escrows/disputes, stories/live, posts (polls/threads/reshare/celebrate), reactions, recommendations, analytics metrics/series, security/age verification, newsletters, chat.
+
+### API Clients
+Under `flutter_addon/lib/services`:
+- `ApiClient` (base), `ConnectionsApi`, `ProfileApi`, `CompanyApi`, `MarketplaceEscrowApi`, `StoriesApi`, `PostsApi`, `ChatApi`, `AnalyticsApi`, `SecurityApi`, `NewsletterApi`, `AgeVerificationApi`, `RecommendationsApi` (via network client), plus `services.dart` export barrel.
+
+### State Management
+`flutter_addon/lib/state/state.dart` exposes `ChangeNotifier` stores for network, profile, company, escrow/disputes, stories/posts, chat, analytics, moderation/security, newsletters, and age verification with loading/error/data handling.
+
+### Screens & Widgets
+Located under `flutter_addon/lib/ui`:
+- Network (`network.dart`), Profile (`profile.dart`), Company (`company.dart`), Marketplace (`marketplace.dart`), Stories (`stories.dart`), Posts (`posts.dart`), Chat (`chat.dart`), Analytics (`analytics.dart`), Moderation (`moderation.dart`), Newsletters (`newsletters.dart`), Account/Security (`account_security.dart`), shared components in `common.dart` and `ui.dart`.
+
+### Navigation Hooks
+- `flutter_addon/lib/menu.dart` exports `proNetworkMenuItems` with route keys and builders.
+- `flutter_addon/lib/menu/routes.dart` provides `ProNetworkRoutes` builders for router integration.
+
+### Analytics & Security Hooks
+- `flutter_addon/lib/analytics` contains `AnalyticsClient` to fire screen/action events to `/api/pro-network/analytics/*` endpoints; security metadata can be attached via `ApiClient` headers.
+
+## 3. Integration Points
+- **Feed & Posts:** Post enhancements (polls/threads/reshare/celebrate) and reactions integrate with Sociopro posts via `/api/pro-network/posts/*` and reaction endpoints; hashtags stored via `HashtagService` feed search.
+- **Search:** Tag enrichment through `HashtagService`, `SearchTagsDomain`, and profile/company skill/employment metadata for richer queries.
+- **Analytics:** Backend `AnalyticsService` records metrics/series; Flutter `AnalyticsClient` sends screen/action signals.
+- **Security:** `SecurityEventService` logs events; moderation queue/actions available via API and exposed in Flutter moderation screens; file scan/bad word hooks rely on config toggles.
+- **Storage:** `StorageService` maps to R2/Wasabi/local disks with signed URLs and optional encryption; mobile uploads should honor configured TTLs.
