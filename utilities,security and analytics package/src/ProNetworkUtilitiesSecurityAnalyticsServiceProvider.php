@@ -69,5 +69,8 @@ class ProNetworkUtilitiesSecurityAnalyticsServiceProvider extends ServiceProvide
         ], 'migrations');
 
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+
+        $this->loadRoutesFrom(__DIR__.'/../routes/pro_network_web.php');
+        $this->loadRoutesFrom(__DIR__.'/../routes/pro_network_api.php');
     }
 }
