@@ -7,6 +7,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controller;
 use ProNetwork\Services\ChatEnhancementService;
 use ProNetwork\Services\ConnectionService;
+use ProNetworkUtilitiesSecurityAnalytics\Http\Requests\ListConversationsRequest;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Requests\UpdateChatSettingsRequest;
 
 class ChatEnhancementController extends Controller
@@ -17,12 +18,12 @@ class ChatEnhancementController extends Controller
     ) {
     }
 
-    public function listConversations(Request $request)
+    public function listConversations(ListConversationsRequest $request)
     {
         $userId = $request->user()->id;
-        $perPage = min(max((int) $request->query('per_page', 15), 1), 100);
+        $perPage = min(max((int) $request->validated('per_page', 15), 1), 100);
         $page = LengthAwarePaginator::resolveCurrentPage();
-        $search = trim((string) $request->query('search', ''));
+        $search = trim((string) $request->validated('search', ''));
 
         $connections = $this->connectionService->firstDegree($userId);
 

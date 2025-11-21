@@ -4,6 +4,7 @@ namespace ProNetworkUtilitiesSecurityAnalytics\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Gate;
 use ProNetwork\Http\Requests\UpdateProfessionalProfileRequest as LegacyUpdateProfessionalProfileRequest;
 use ProNetwork\Models\ProfessionalProfile;
 use ProNetwork\Services\ProfileEnhancementService;
@@ -51,6 +52,9 @@ class ProfessionalProfileController extends Controller
     {
         $userId = $request->user()->id;
         $data = $request->validated();
+
+        $profile = ProfessionalProfile::firstOrCreate(['user_id' => $userId]);
+        Gate::authorize('update', $profile);
 
         $profile = $this->profileEnhancementService->updateProfile($userId, [
             'headline' => $data['headline'] ?? null,

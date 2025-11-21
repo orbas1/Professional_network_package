@@ -14,28 +14,28 @@ class CompanyProfileController extends Controller
     {
     }
 
-    public function show(Request $request, int $companyId)
+    public function show(Request $request, CompanyProfile $company)
     {
-        $profile = CompanyProfile::with('employees')->where('page_id', $companyId)->firstOrFail();
-        $employeeCount = $this->profileEnhancementService->computeEmployeeCount($profile);
+        $company->loadMissing('employees');
+        $employeeCount = $this->profileEnhancementService->computeEmployeeCount($company);
 
         if ($request->expectsJson()) {
             return response()->json([
-                'profile' => $profile,
+                'profile' => $company,
                 'employee_count' => $employeeCount,
             ]);
         }
 
         return view('pro_network::company.show', [
-            'profile' => $profile,
+            'profile' => $company,
             'employeeCount' => $employeeCount,
         ]);
     }
 
-    public function update(UpdateCompanyProfileRequest $request, int $companyId)
+    public function update(UpdateCompanyProfileRequest $request, CompanyProfile $company)
     {
         $payload = $request->validated();
-        $profile = $this->profileEnhancementService->updateCompanyProfile($companyId, [
+        $profile = $this->profileEnhancementService->updateCompanyProfile($company->page_id, [
             'name' => $payload['name'] ?? null,
             'description' => $payload['description'] ?? null,
             'website' => $payload['website'] ?? null,

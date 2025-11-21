@@ -4,6 +4,7 @@ namespace ProNetworkUtilitiesSecurityAnalytics\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Gate;
 use ProNetwork\Models\MarketplaceEscrow;
 use ProNetwork\Services\MarketplaceEscrowDomain;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Requests\OpenEscrowRequest;
@@ -16,11 +17,14 @@ class MarketplaceEscrowController extends Controller
     {
     }
 
-    public function showByOrder(Request $request, int $orderId)
+    public function showByOrder(Request $request, $order)
     {
+        $orderModel = $this->resolveOrderModel($order);
         $escrow = MarketplaceEscrow::with(['milestones', 'transactions', 'disputes.messages'])
-            ->where('order_id', $orderId)
+            ->where('order_id', $orderModel->getKey())
             ->firstOrFail();
+
+        Gate::authorize('view', $escrow);
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -33,12 +37,16 @@ class MarketplaceEscrowController extends Controller
         ]);
     }
 
-    public function open(OpenEscrowRequest $request, int $orderId)
+    public function open(OpenEscrowRequest $request, $order)
     {
         $data = $request->validated();
+        $orderModel = $this->resolveOrderModel($order);
+        $escrow = MarketplaceEscrow::firstOrNew(['order_id' => $orderModel->getKey()]);
+        $escrow->setRelation('order', $orderModel);
+        Gate::authorize('manage', $escrow);
 
         $escrow = $this->escrowService->open(
-            $orderId,
+            $orderModel->getKey(),
             (float) $data['amount'],
             $data['currency'] ?? 'USD',
             $data['delivery_method'] ?? 'delivery'
@@ -65,6 +73,7 @@ class MarketplaceEscrowController extends Controller
     {
         $data = $request->validated();
         $escrow = MarketplaceEscrow::findOrFail($escrowId);
+        Gate::authorize('manage', $escrow);
 
         $transaction = $this->escrowService->release($escrow, (float) $data['amount']);
         $transaction->user_id = $request->user()->id;
@@ -89,6 +98,7 @@ class MarketplaceEscrowController extends Controller
     {
         $data = $request->validated();
         $escrow = MarketplaceEscrow::findOrFail($escrowId);
+        Gate::authorize('manage', $escrow);
 
         $transaction = $this->escrowService->refund($escrow, (float) $data['amount']);
         $transaction->user_id = $request->user()->id;
@@ -110,5 +120,16 @@ class MarketplaceEscrowController extends Controller
             'escrow' => $escrow,
             'transaction' => $transaction,
         ]);
+    }
+
+    protected function resolveOrderModel($order)
+    {
+        $orderClass = config('pro_network_utilities_security_analytics.models.marketplace_order');
+
+        if (is_object($order)) {
+            return $order;
+        }
+
+        return $orderClass::findOrFail((int) $order);
     }
 }

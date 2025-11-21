@@ -12,6 +12,12 @@ class ReactionsService
 {
     public function react(Model $reactable, int $userId, ReactionType $type): Reaction
     {
+        $existing = Reaction::where([
+            'reactable_id' => $reactable->getKey(),
+            'reactable_type' => $reactable->getMorphClass(),
+            'user_id' => $userId,
+        ])->first();
+
         $reaction = Reaction::updateOrCreate([
             'reactable_id' => $reactable->getKey(),
             'reactable_type' => $reactable->getMorphClass(),
@@ -23,8 +29,13 @@ class ReactionsService
 
         $this->aggregate($reactable);
 
-        if (method_exists($reactable, 'user_id')) {
-            $this->updateProfileScore($reactable->user_id ?? null, $type);
+        if ($ownerId = $this->detectOwnerId($reactable)) {
+            if ($existing && $existing->type !== $type) {
+                $previousType = $existing->type instanceof ReactionType ? $existing->type : ReactionType::from($existing->type);
+                $this->adjustProfileScore($ownerId, $previousType, -1);
+            }
+
+            $this->adjustProfileScore($ownerId, $type, 1);
         }
 
         return $reaction;
@@ -32,13 +43,22 @@ class ReactionsService
 
     public function remove(Model $reactable, int $userId): void
     {
-        Reaction::where([
+        $reaction = Reaction::where([
             'reactable_id' => $reactable->getKey(),
             'reactable_type' => $reactable->getMorphClass(),
             'user_id' => $userId,
-        ])->delete();
+        ])->first();
+
+        if ($reaction) {
+            $reaction->delete();
+        }
 
         $this->aggregate($reactable);
+
+        if ($reaction && ($ownerId = $this->detectOwnerId($reactable))) {
+            $reactionType = $reaction->type instanceof ReactionType ? $reaction->type : ReactionType::from($reaction->type);
+            $this->adjustProfileScore($ownerId, $reactionType, -1);
+        }
     }
 
     public function aggregate(Model $reactable): void
@@ -60,20 +80,32 @@ class ReactionsService
         ]);
     }
 
-    public function updateProfileScore(?int $userId, ReactionType $type): void
+    protected function adjustProfileScore(?int $userId, ReactionType $type, int $direction): void
     {
-        if (!$userId) {
+        if (! $userId) {
             return;
         }
 
         $score = ProfileReactionScore::firstOrCreate(['user_id' => $userId]);
         $breakdown = collect($score->reaction_breakdown ?? []);
-        $breakdown[$type->value] = ($breakdown[$type->value] ?? 0) + 1;
+        $breakdown[$type->value] = max(0, ($breakdown[$type->value] ?? 0) + $direction);
 
         $score->update([
-            'like_score' => $score->like_score + ($type === ReactionType::DISLIKE ? 0 : 1),
-            'dislike_count' => $score->dislike_count + ($type === ReactionType::DISLIKE ? 1 : 0),
+            'like_score' => max(0, $score->like_score + ($type === ReactionType::DISLIKE ? 0 : $direction)),
+            'dislike_count' => max(0, $score->dislike_count + ($type === ReactionType::DISLIKE ? $direction : 0)),
             'reaction_breakdown' => $breakdown,
         ]);
+    }
+
+    protected function detectOwnerId(Model $reactable): ?int
+    {
+        if (method_exists($reactable, 'getAttribute')) {
+            $owner = $reactable->getAttribute('user_id');
+            if ($owner) {
+                return (int) $owner;
+            }
+        }
+
+        return property_exists($reactable, 'user_id') ? (int) ($reactable->user_id ?? 0) : null;
     }
 }

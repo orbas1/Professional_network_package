@@ -4,6 +4,7 @@ namespace ProNetworkUtilitiesSecurityAnalytics\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Gate;
 use ProNetwork\Models\MarketplaceDispute;
 use ProNetwork\Models\MarketplaceEscrow;
 use ProNetwork\Services\MarketplaceEscrowDomain;
@@ -28,6 +29,7 @@ class MarketplaceDisputeController extends Controller
     {
         $data = $request->validated();
         $escrow = MarketplaceEscrow::where('order_id', $orderId)->firstOrFail();
+        Gate::authorize('manage', $escrow);
         $dispute = $this->escrowService->openDispute($escrow, $request->user()->id, $data['reason']);
 
         if ($request->expectsJson()) {
@@ -42,9 +44,10 @@ class MarketplaceDisputeController extends Controller
         ]);
     }
 
-    public function show(Request $request, int $disputeId)
+    public function show(Request $request, MarketplaceDispute $dispute)
     {
-        $dispute = MarketplaceDispute::with(['messages', 'escrow'])->findOrFail($disputeId);
+        $dispute->loadMissing(['messages', 'escrow']);
+        Gate::authorize('view', $dispute);
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -57,10 +60,10 @@ class MarketplaceDisputeController extends Controller
         ]);
     }
 
-    public function reply(ReplyDisputeRequest $request, int $disputeId)
+    public function reply(ReplyDisputeRequest $request, MarketplaceDispute $dispute)
     {
         $data = $request->validated();
-        $dispute = MarketplaceDispute::findOrFail($disputeId);
+        Gate::authorize('view', $dispute);
 
         $message = $this->escrowService->addDisputeMessage(
             $dispute,
@@ -83,10 +86,10 @@ class MarketplaceDisputeController extends Controller
         ]);
     }
 
-    public function resolve(ResolveDisputeRequest $request, int $disputeId)
+    public function resolve(ResolveDisputeRequest $request, MarketplaceDispute $dispute)
     {
         $data = $request->validated();
-        $dispute = MarketplaceDispute::findOrFail($disputeId);
+        Gate::authorize('resolve', $dispute);
 
         $resolved = $this->escrowService->resolveDispute(
             $dispute,
