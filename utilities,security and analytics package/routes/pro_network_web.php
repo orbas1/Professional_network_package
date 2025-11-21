@@ -3,9 +3,12 @@
 use Illuminate\Support\Facades\Route;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\CompanyProfileController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\ConnectionsController;
+use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\HashtagController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\MarketplaceDisputeController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\MarketplaceEscrowController;
+use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\PostEnhancementController;
 use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\ProfessionalProfileController;
+use ProNetworkUtilitiesSecurityAnalytics\Http\Controllers\StoryEnhancementController;
 
 Route::middleware(['web', 'auth'])->prefix('pro-network')->group(function () {
     Route::get('/my-network', [ConnectionsController::class, 'index']);
@@ -23,4 +26,13 @@ Route::middleware(['web', 'auth'])->prefix('pro-network')->group(function () {
     Route::get('/marketplace/orders/{order}/escrow', [MarketplaceEscrowController::class, 'showByOrder']);
     Route::get('/marketplace/orders/{order}/disputes/create', [MarketplaceDisputeController::class, 'create']);
     Route::get('/marketplace/disputes/{dispute}', [MarketplaceDisputeController::class, 'show']);
+
+    Route::get('/stories/viewer', [StoryEnhancementController::class, 'viewer']);
+    Route::get('/stories/creator', [StoryEnhancementController::class, 'creator']);
+
+    Route::get('/hashtags/{hashtag}', [HashtagController::class, 'show']);
+
+    Route::get('/posts/polls/create', [PostEnhancementController::class, 'createPoll']);
+    Route::get('/posts/threads/create', [PostEnhancementController::class, 'createThread']);
+    Route::get('/posts/celebrate/create', [PostEnhancementController::class, 'createCelebrate']);
 });
