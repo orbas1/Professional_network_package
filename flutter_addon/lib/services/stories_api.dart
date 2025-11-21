@@ -17,10 +17,14 @@ class StoriesApi extends BaseApiService {
   }
 
   Future<List<Story>> fetchStories() async {
-    final data = await get('/api/pro-network/stories');
-    return (data as List)
-        .map((e) => Story.fromJson(e as Map<String, dynamic>))
-        .toList();
+    try {
+      final data = await get('/api/pro-network/stories');
+      return (data as List)
+          .map((e) => Story.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } on ApiException {
+      return [];
+    }
   }
 }
 

@@ -1,37 +1,42 @@
 class ChatConversation {
   final int id;
-  final String? title;
-  final List<int> participantIds;
+  final String? participantName;
+  final DateTime? lastMessageAt;
+  final int? mutualCount;
+  final bool attachmentsAllowed;
   final List<ChatMessage> messages;
-  final bool muted;
 
   const ChatConversation({
     required this.id,
-    this.title,
-    this.participantIds = const [],
+    this.participantName,
+    this.lastMessageAt,
+    this.mutualCount,
+    this.attachmentsAllowed = false,
     this.messages = const [],
-    this.muted = false,
   });
 
   factory ChatConversation.fromJson(Map<String, dynamic> json) {
     return ChatConversation(
-      id: json['id'] as int,
-      title: json['title'] as String?,
-      participantIds:
-          List<int>.from(json['participants'] as List? ?? const []),
+      id: json['conversation_id'] as int? ?? json['id'] as int,
+      participantName: json['participant'] as String?,
+      mutualCount: json['mutual_count'] as int?,
+      lastMessageAt: json['last_message_at'] != null
+          ? DateTime.tryParse(json['last_message_at'].toString())
+          : null,
+      attachmentsAllowed: json['attachments_allowed'] as bool? ?? false,
       messages: (json['messages'] as List? ?? [])
           .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
           .toList(),
-      muted: json['muted'] as bool? ?? false,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        if (title != null) 'title': title,
-        'participants': participantIds,
+        'conversation_id': id,
+        if (participantName != null) 'participant': participantName,
+        if (mutualCount != null) 'mutual_count': mutualCount,
+        'attachments_allowed': attachmentsAllowed,
+        if (lastMessageAt != null) 'last_message_at': lastMessageAt!.toIso8601String(),
         'messages': messages.map((e) => e.toJson()).toList(),
-        'muted': muted,
       };
 }
 

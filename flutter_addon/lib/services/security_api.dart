@@ -5,15 +5,14 @@ class SecurityApi extends BaseApiService {
   SecurityApi({required super.baseUrl, super.tokenProvider, super.client});
 
   Future<List<SecurityEvent>> events(Map<String, dynamic> filters) async {
-    final data = await post('/api/pro-network/security/events', data: filters);
-    return (data as List)
-        .map((e) => SecurityEvent.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final data = await post('/api/pro-network/security/events', data: filters) as Map<String, dynamic>;
+    final list = data['data'] as List? ?? [];
+    return list.map((e) => SecurityEvent.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   Future<List<Map<String, dynamic>>> moderationQueue(Map<String, dynamic> filters) async {
-    final data = await post('/api/pro-network/moderation/queue', data: filters);
-    return List<Map<String, dynamic>>.from(data as List? ?? []);
+    final data = await post('/api/pro-network/moderation/queue', data: filters) as Map<String, dynamic>;
+    return List<Map<String, dynamic>>.from(data['data'] as List? ?? []);
   }
 
   Future<Map<String, dynamic>> moderate(Map<String, dynamic> payload) async {
@@ -26,13 +25,13 @@ class NewsletterApi extends BaseApiService {
   NewsletterApi({required super.baseUrl, super.tokenProvider, super.client});
 
   Future<NewsletterSubscription> subscribe(String email) async {
-    final data = await post('/api/pro-network/newsletters/subscribe', data: {'email': email});
-    return NewsletterSubscription.fromJson(data as Map<String, dynamic>);
+    final data = await post('/api/pro-network/newsletters/subscribe', data: {'email': email}) as Map<String, dynamic>;
+    return NewsletterSubscription.fromJson((data['subscription'] as Map<String, dynamic>?) ?? data);
   }
 
   Future<NewsletterSubscription> unsubscribe(String email) async {
-    final data = await post('/api/pro-network/newsletters/unsubscribe', data: {'email': email});
-    return NewsletterSubscription.fromJson(data as Map<String, dynamic>);
+    final data = await post('/api/pro-network/newsletters/unsubscribe', data: {'email': email}) as Map<String, dynamic>;
+    return NewsletterSubscription.fromJson((data['subscription'] as Map<String, dynamic>?) ?? data);
   }
 }
 

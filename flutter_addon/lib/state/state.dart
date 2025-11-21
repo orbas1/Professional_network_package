@@ -16,24 +16,22 @@ class MyNetworkState extends ChangeNotifier {
   String? error;
   NetworkSummary? summary;
   List<NetworkConnection> connections = [];
+  PaginationMeta? meta;
 
   MyNetworkState(this.api);
 
-  Future<void> loadSummary() async {
-    await _guard(() async {
-      summary = await api.fetchSummary();
-    });
-  }
-
   Future<void> loadConnections({int page = 1, Map<String, dynamic>? filters}) async {
     await _guard(() async {
-      connections = await api.listConnections(page: page, filters: filters);
+      final result = await api.listConnections(page: page, filters: filters);
+      connections = result.data;
+      summary = result.summary;
+      meta = result.meta;
     });
   }
 
   Future<void> loadMutual(int userId) async {
     await _guard(() async {
-      connections = await api.mutualConnections(userId);
+      summary = await api.mutualConnections(userId);
     });
   }
 
@@ -65,10 +63,10 @@ class RecommendationsState extends ChangeNotifier {
 
   Future<void> load() async {
     await _guard(() async {
-      people = await api.recommendedPeople();
-      companies = await api.recommendedCompanies();
-      groups = await api.recommendedGroups();
-      content = await api.recommendedContent();
+      people = (await api.recommendedPeople()).items;
+      companies = (await api.recommendedCompanies()).items;
+      groups = (await api.recommendedGroups()).items;
+      content = (await api.recommendedContent()).items;
     });
   }
 

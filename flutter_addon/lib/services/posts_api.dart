@@ -34,8 +34,8 @@ class ReactionsApi extends BaseApiService {
   ReactionsApi({required super.baseUrl, super.tokenProvider, super.client});
 
   Future<Reaction> react(Map<String, dynamic> payload) async {
-    final data = await post('/api/pro-network/reactions', data: payload);
-    return Reaction.fromJson(data as Map<String, dynamic>);
+    final data = await post('/api/pro-network/reactions', data: payload) as Map<String, dynamic>;
+    return Reaction.fromJson((data['reaction'] as Map<String, dynamic>?) ?? data);
   }
 
   Future<void> unreact(Map<String, dynamic> payload) async {
@@ -43,8 +43,8 @@ class ReactionsApi extends BaseApiService {
   }
 
   Future<Reaction> dislike(Map<String, dynamic> payload) async {
-    final data = await post('/api/pro-network/reactions/dislike', data: payload);
-    return Reaction.fromJson(data as Map<String, dynamic>);
+    final data = await post('/api/pro-network/reactions/dislike', data: payload) as Map<String, dynamic>;
+    return Reaction.fromJson((data['reaction'] as Map<String, dynamic>?) ?? data);
   }
 
   Future<void> undislike(Map<String, dynamic> payload) async {

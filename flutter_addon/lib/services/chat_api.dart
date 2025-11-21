@@ -5,15 +5,14 @@ class ChatApi extends BaseApiService {
   ChatApi({required super.baseUrl, super.tokenProvider, super.client});
 
   Future<List<ChatConversation>> listConversations({int page = 1}) async {
-    final data = await get('/api/pro-network/chat/conversations?page=$page');
-    return (data as List)
-        .map((e) => ChatConversation.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final data = await get('/api/pro-network/chat/conversations?page=$page') as Map<String, dynamic>;
+    final list = data['data'] as List? ?? [];
+    return list.map((e) => ChatConversation.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   Future<ChatConversation> conversation(int conversationId) async {
-    final data = await get('/api/pro-network/chat/conversations/$conversationId');
-    return ChatConversation.fromJson(data as Map<String, dynamic>);
+    final data = await get('/api/pro-network/chat/conversations/$conversationId') as Map<String, dynamic>;
+    return ChatConversation.fromJson(data['conversation'] as Map<String, dynamic>);
   }
 
   Future<void> deleteConversation(int conversationId) async {
@@ -31,10 +30,9 @@ class ChatApi extends BaseApiService {
   }
 
   Future<List<ChatConversation>> messageRequests() async {
-    final data = await get('/api/pro-network/chat/requests');
-    return (data as List)
-        .map((e) => ChatConversation.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final data = await get('/api/pro-network/chat/requests') as Map<String, dynamic>;
+    final list = data['data'] as List? ?? [];
+    return list.map((e) => ChatConversation.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   Future<ChatConversation> acceptRequest(int requestId) async {

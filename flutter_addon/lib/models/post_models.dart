@@ -30,20 +30,24 @@ class Reaction {
 
 class ReactionScore {
   final int userId;
-  final int total;
+  final int likeScore;
+  final int dislikeCount;
   final Map<String, int> breakdown;
 
   const ReactionScore({
     required this.userId,
-    required this.total,
+    required this.likeScore,
+    required this.dislikeCount,
     this.breakdown = const {},
   });
 
   factory ReactionScore.fromJson(Map<String, dynamic> json) {
     return ReactionScore(
       userId: json['user_id'] as int? ?? json['userId'] as int,
-      total: json['total'] as int? ?? 0,
-      breakdown: (json['breakdown'] as Map<String, dynamic>?)
+      likeScore: json['like_score'] as int? ?? json['total'] as int? ?? 0,
+      dislikeCount: json['dislike_count'] as int? ?? 0,
+      breakdown: (json['reaction_breakdown'] as Map<String, dynamic>? ??
+                  json['breakdown'] as Map<String, dynamic>?)
               ?.map((key, value) => MapEntry(key, (value as num).toInt())) ??
           const {},
     );
@@ -51,7 +55,8 @@ class ReactionScore {
 
   Map<String, dynamic> toJson() => {
         'user_id': userId,
-        'total': total,
+        'like_score': likeScore,
+        'dislike_count': dislikeCount,
         'breakdown': breakdown,
       };
 }

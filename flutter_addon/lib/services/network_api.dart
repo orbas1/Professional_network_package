@@ -4,49 +4,37 @@ import 'api_client.dart';
 class NetworkApi extends BaseApiService {
   NetworkApi({required super.baseUrl, super.tokenProvider, super.client});
 
-  Future<NetworkSummary> fetchSummary() async {
-    final data = await get('/api/pro-network/connections/summary');
-    return NetworkSummary.fromJson(data as Map<String, dynamic>);
-  }
-
-  Future<List<NetworkConnection>> listConnections({int page = 1, Map<String, dynamic>? filters}) async {
+  Future<PaginatedConnections> listConnections({int page = 1, Map<String, dynamic>? filters}) async {
     final query = <String, dynamic>{'page': page.toString(), ...?filters};
-    final queryString = Uri(queryParameters: query).query;
-    final data = await get('/api/pro-network/connections${queryString.isNotEmpty ? '?$queryString' : ''}');
-    return (data as List)
-        .map((e) => NetworkConnection.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final data = await getWithQuery('/api/pro-network/connections', query);
+    return PaginatedConnections.fromJson(data as Map<String, dynamic>);
   }
 
-  Future<List<NetworkConnection>> mutualConnections(int userId) async {
+  Future<NetworkSummary> mutualConnections(int userId) async {
     final data = await get('/api/pro-network/connections/mutual/$userId');
-    return (data as List)
-        .map((e) => NetworkConnection.fromJson(e as Map<String, dynamic>))
-        .toList();
+    return NetworkSummary.fromJson(data as Map<String, dynamic>);
   }
 }
 
 class RecommendationsApi extends BaseApiService {
   RecommendationsApi({required super.baseUrl, super.tokenProvider, super.client});
 
-  Future<List<RecommendationItem>> _fetchList(String path) async {
+  Future<RecommendationResult> _fetch(String path) async {
     final data = await get(path);
-    return (data as List)
-        .map((e) => RecommendationItem.fromJson(e as Map<String, dynamic>))
-        .toList();
+    return RecommendationResult.fromJson(data as Map<String, dynamic>);
   }
 
-  Future<List<RecommendationItem>> recommendedPeople() =>
-      _fetchList('/api/pro-network/recommendations/people');
+  Future<RecommendationResult> recommendedPeople() =>
+      _fetch('/api/pro-network/recommendations/people');
 
-  Future<List<RecommendationItem>> recommendedCompanies() =>
-      _fetchList('/api/pro-network/recommendations/companies');
+  Future<RecommendationResult> recommendedCompanies() =>
+      _fetch('/api/pro-network/recommendations/companies');
 
-  Future<List<RecommendationItem>> recommendedGroups() =>
-      _fetchList('/api/pro-network/recommendations/groups');
+  Future<RecommendationResult> recommendedGroups() =>
+      _fetch('/api/pro-network/recommendations/groups');
 
-  Future<List<RecommendationItem>> recommendedContent() =>
-      _fetchList('/api/pro-network/recommendations/content');
+  Future<RecommendationResult> recommendedContent() =>
+      _fetch('/api/pro-network/recommendations/content');
 
   Future<void> respondToRecommendation({
     required String type,
@@ -64,13 +52,13 @@ class ProfileApi extends BaseApiService {
     final path = userId == null
         ? '/api/pro-network/profile/professional'
         : '/api/pro-network/profile/professional?user=$userId';
-    final data = await get(path);
-    return ProfessionalProfile.fromJson(data as Map<String, dynamic>);
+    final data = await get(path) as Map<String, dynamic>;
+    return ProfessionalProfile.fromJson((data['profile'] as Map<String, dynamic>?) ?? data);
   }
 
   Future<ProfessionalProfile> updateProfile(Map<String, dynamic> payload) async {
-    final data = await post('/api/pro-network/profile/professional', data: payload);
-    return ProfessionalProfile.fromJson(data as Map<String, dynamic>);
+    final data = await post('/api/pro-network/profile/professional', data: payload) as Map<String, dynamic>;
+    return ProfessionalProfile.fromJson((data['profile'] as Map<String, dynamic>?) ?? data);
   }
 }
 
@@ -78,12 +66,14 @@ class CompanyApi extends BaseApiService {
   CompanyApi({required super.baseUrl, super.tokenProvider, super.client});
 
   Future<CompanyProfile> fetchCompany(int companyId) async {
-    final data = await get('/api/pro-network/company/$companyId');
-    return CompanyProfile.fromJson(data as Map<String, dynamic>);
+    final data = await get('/api/pro-network/company/$companyId') as Map<String, dynamic>;
+    return CompanyProfile.fromJson((data['profile'] as Map<String, dynamic>?) ?? data,
+        employeeCount: data['employee_count'] as int?);
   }
 
   Future<CompanyProfile> updateCompany(int companyId, Map<String, dynamic> payload) async {
-    final data = await post('/api/pro-network/company/$companyId', data: payload);
-    return CompanyProfile.fromJson(data as Map<String, dynamic>);
+    final data = await post('/api/pro-network/company/$companyId', data: payload) as Map<String, dynamic>;
+    return CompanyProfile.fromJson((data['profile'] as Map<String, dynamic>?) ?? data,
+        employeeCount: data['employee_count'] as int?);
   }
 }
