@@ -3,24 +3,54 @@
 namespace ProNetwork\Services;
 
 use ProNetwork\Models\AgeVerification;
+use ProNetwork\Models\AgeVerificationLog;
+use ProNetwork\Support\DTOs\AgeVerificationResponseDto;
 
 class AgeVerificationService
 {
-    public function requestVerification(int $userId): AgeVerification
+    public function start(int $userId, array $payload = []): AgeVerificationResponseDto
     {
-        return AgeVerification::updateOrCreate(['user_id' => $userId], ['status' => 'pending']);
+        $verification = AgeVerification::updateOrCreate(
+            ['user_id' => $userId],
+            [
+                'status' => 'pending',
+                'provider' => config('pro_network_utilities_security_analytics.age_verification.provider'),
+                'payload' => $payload,
+            ]
+        );
+
+        $this->log($verification, 'started', $payload);
+
+        return new AgeVerificationResponseDto($verification->status, $verification->provider_reference);
     }
 
-    public function markVerified(int $userId, ?string $reference = null): AgeVerification
+    public function complete(AgeVerification $verification, string $status, array $meta = []): AgeVerification
     {
-        return AgeVerification::updateOrCreate(['user_id' => $userId], [
-            'status' => 'verified',
-            'provider_reference' => $reference,
+        $verification->update([
+            'status' => $status,
+            'verified_at' => $status === 'verified' ? now() : null,
+            'rejected_at' => $status === 'rejected' ? now() : null,
+            'payload' => $meta + ($verification->payload ?? []),
         ]);
+
+        $this->log($verification, 'updated', ['status' => $status] + $meta);
+
+        return $verification->fresh();
     }
 
-    public function status(int $userId): string
+    public function enforceIfEnabled(AgeVerification $verification): bool
     {
-        return AgeVerification::where('user_id', $userId)->value('status') ?? 'pending';
+        return config('pro_network_utilities_security_analytics.features.age_verification')
+            ? $verification->status === 'verified'
+            : true;
+    }
+
+    protected function log(AgeVerification $verification, string $event, array $meta = []): AgeVerificationLog
+    {
+        return AgeVerificationLog::create([
+            'age_verification_id' => $verification->id,
+            'event' => $event,
+            'meta' => $meta,
+        ]);
     }
 }

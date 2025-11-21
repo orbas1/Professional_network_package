@@ -2,13 +2,26 @@
 
 namespace ProNetwork\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class MarketplaceDispute extends Model
+class MarketplaceDispute extends BaseModel
 {
     protected $table = 'pro_network_marketplace_disputes';
-    protected $fillable = ['escrow_id','raised_by','reason','status'];
+
+    protected $fillable = [
+        'escrow_id',
+        'raised_by',
+        'reason',
+        'status',
+        'resolution_notes',
+        'resolved_by',
+        'resolved_at',
+    ];
+
+    protected $casts = [
+        'resolved_at' => 'datetime',
+    ];
 
     public function escrow(): BelongsTo
     {
@@ -17,6 +30,16 @@ class MarketplaceDispute extends Model
 
     public function raiser(): BelongsTo
     {
-        return $this->belongsTo(config('auth.providers.users.model', \App\Models\User::class), 'raised_by');
+        return $this->belongsTo($this->userClass(), 'raised_by');
+    }
+
+    public function resolver(): BelongsTo
+    {
+        return $this->belongsTo($this->userClass(), 'resolved_by');
+    }
+
+    public function messages(): HasMany
+    {
+        return $this->hasMany(MarketplaceDisputeMessage::class, 'dispute_id');
     }
 }

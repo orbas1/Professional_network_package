@@ -2,19 +2,35 @@
 
 namespace ProNetwork\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ModerationQueue extends Model
+class ModerationQueue extends BaseModel
 {
     protected $table = 'pro_network_moderation_queue';
-    protected $fillable = ['moderatable_id','moderatable_type','reason','status','flags'];
-    protected $casts = [
-        'flags' => 'array',
+
+    protected $fillable = [
+        'moderatable_id',
+        'moderatable_type',
+        'reason',
+        'status',
+        'flags',
+        'actioned_by',
+        'resolved_at',
+        'notes',
     ];
 
-    public function moderatable(): MorphTo
+    protected $casts = [
+        'flags' => 'array',
+        'resolved_at' => 'datetime',
+    ];
+
+    public function moderatable()
     {
         return $this->morphTo();
+    }
+
+    public function actor(): BelongsTo
+    {
+        return $this->belongsTo($this->userClass(), 'actioned_by');
     }
 }

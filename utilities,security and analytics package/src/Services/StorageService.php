@@ -3,30 +3,33 @@
 namespace ProNetwork\Services;
 
 use Illuminate\Support\Facades\Storage;
-use RuntimeException;
 
 class StorageService
 {
-    public function disk()
+    public function disk(?string $disk = null)
     {
-        $disk = config('pro_network_utilities_security_analytics.storage.default_disk', 'local');
+        $disk = $disk ?? config('pro_network_utilities_security_analytics.storage.default_disk', 'local');
+
         return Storage::disk($disk);
     }
 
-    public function putEncrypted(string $path, string $contents): string
+    public function secureUrl(string $path, ?string $disk = null, int $ttl = null): string
     {
-        $encrypted = encrypt($contents);
-        $this->disk()->put($path, $encrypted);
-        return $path;
+        $ttl = $ttl ?? (int) config('pro_network_utilities_security_analytics.storage.signed_url_ttl', 300);
+        return $this->disk($disk)->temporaryUrl($path, now()->addSeconds($ttl));
     }
 
-    public function signedUrl(string $path): string
+    public function putEncrypted(string $path, string $contents, ?string $disk = null): string
     {
-        $ttl = (int) config('pro_network_utilities_security_analytics.storage.signed_url_ttl', 300);
-        $disk = $this->disk();
-        if (method_exists($disk, 'temporaryUrl')) {
-            return $disk->temporaryUrl($path, now()->addSeconds($ttl));
+        $disk = $disk ?? config('pro_network_utilities_security_analytics.storage.default_disk', 'local');
+        $key = config('pro_network_utilities_security_analytics.storage.encryption.key');
+
+        if (config('pro_network_utilities_security_analytics.storage.encryption.enabled') && $key) {
+            $contents = openssl_encrypt($contents, 'aes-256-cbc', $key, 0, substr($key, 0, 16));
         }
-        throw new RuntimeException('Disk does not support signed URLs');
+
+        $this->disk($disk)->put($path, $contents);
+
+        return $path;
     }
 }

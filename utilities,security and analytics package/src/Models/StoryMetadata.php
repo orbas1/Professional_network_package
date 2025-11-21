@@ -2,21 +2,41 @@
 
 namespace ProNetwork\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class StoryMetadata extends Model
+class StoryMetadata extends BaseModel
 {
     protected $table = 'pro_network_story_metadata';
-    protected $fillable = ['story_id','guests','music','links'];
+
+    protected $fillable = [
+        'story_id',
+        'overlays',
+        'filters',
+        'stickers',
+        'links',
+        'music_track_id',
+        'live_session_id',
+    ];
+
     protected $casts = [
-        'guests' => 'array',
-        'music' => 'array',
+        'overlays' => 'array',
+        'filters' => 'array',
+        'stickers' => 'array',
         'links' => 'array',
     ];
 
     public function story(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Story::class, 'story_id');
+        return $this->belongsTo($this->storyClass(), 'story_id');
+    }
+
+    public function musicTrack(): BelongsTo
+    {
+        return $this->belongsTo(MusicTrack::class, 'music_track_id');
+    }
+
+    public function liveSession(): BelongsTo
+    {
+        return $this->belongsTo(LiveSession::class, 'live_session_id');
     }
 }

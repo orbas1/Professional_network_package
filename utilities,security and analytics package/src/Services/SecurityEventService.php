@@ -2,44 +2,32 @@
 
 namespace ProNetwork\Services;
 
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 use ProNetwork\Models\SecurityEvent;
+use ProNetwork\Support\Enums\SecurityEventType;
 
 class SecurityEventService
 {
-    public function logEvent(?int $userId, string $event, array $context = []): SecurityEvent
+    public function log(SecurityEventType $type, array $payload = []): SecurityEvent
     {
-        $context = config('pro_network_utilities_security_analytics.security.gdpr_logging') ? $context : [];
         return SecurityEvent::create([
-            'user_id' => $userId,
-            'ip' => request()->ip(),
-            'event' => $event,
-            'context' => $context,
+            'user_id' => $payload['user_id'] ?? null,
+            'type' => $type,
+            'ip' => $payload['ip'] ?? request()->ip(),
+            'user_agent' => $payload['user_agent'] ?? request()->userAgent(),
+            'severity' => $payload['severity'] ?? 'info',
+            'context' => $payload['context'] ?? [],
         ]);
     }
 
-    public function tooManyAttempts(string $key): bool
+    public function tooManyAttempts(string $ip): bool
     {
-        $max = (int) config('pro_network_utilities_security_analytics.security.brute_force.max_attempts');
-        return Cache::get($this->attemptKey($key), 0) >= $max;
-    }
+        $max = (int) config('pro_network_utilities_security_analytics.security.brute_force.max_attempts', 5);
+        $decay = (int) config('pro_network_utilities_security_analytics.security.brute_force.decay_minutes', 15);
 
-    public function incrementAttempts(string $key): void
-    {
-        $cacheKey = $this->attemptKey($key);
-        $decay = (int) config('pro_network_utilities_security_analytics.security.brute_force.decay_minutes');
-        Cache::add($cacheKey, 0, now()->addMinutes($decay));
-        Cache::increment($cacheKey);
-    }
-
-    public function clearAttempts(string $key): void
-    {
-        Cache::forget($this->attemptKey($key));
-    }
-
-    protected function attemptKey(string $key): string
-    {
-        return 'pro_network_security_attempts_'.$key;
+        return SecurityEvent::where('ip', $ip)
+            ->where('type', SecurityEventType::BRUTE_FORCE)
+            ->where('created_at', '>=', Carbon::now()->subMinutes($decay))
+            ->count() >= $max;
     }
 }

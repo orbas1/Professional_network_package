@@ -2,15 +2,27 @@
 
 namespace ProNetwork\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class MarketplaceMilestone extends Model
+class MarketplaceMilestone extends BaseModel
 {
     protected $table = 'pro_network_marketplace_milestones';
-    protected $fillable = ['escrow_id','title','amount','status','due_at'];
+
+    protected $fillable = [
+        'escrow_id',
+        'title',
+        'amount',
+        'status',
+        'due_at',
+        'released_at',
+        'refunded_at',
+    ];
+
     protected $casts = [
+        'amount' => 'decimal:2',
         'due_at' => 'datetime',
+        'released_at' => 'datetime',
+        'refunded_at' => 'datetime',
     ];
 
     public function escrow(): BelongsTo

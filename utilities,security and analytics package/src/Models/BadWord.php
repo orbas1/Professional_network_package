@@ -2,10 +2,13 @@
 
 namespace ProNetwork\Models;
 
-use Illuminate\Database\Eloquent\Model;
-
-class BadWord extends Model
+class BadWord extends BaseModel
 {
     protected $table = 'pro_network_bad_words';
-    protected $fillable = ['phrase'];
+
+    protected $fillable = [
+        'phrase',
+        'severity',
+        'replacement',
+    ];
 }

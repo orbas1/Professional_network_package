@@ -2,10 +2,25 @@
 
 namespace ProNetwork\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class MusicTrack extends Model
+class MusicTrack extends BaseModel
 {
     protected $table = 'pro_network_music_tracks';
-    protected $fillable = ['title','artist','url','license'];
+
+    protected $fillable = [
+        'title',
+        'artist',
+        'duration_seconds',
+        'license',
+        'storage_disk',
+        'storage_path',
+        'genre',
+        'mood',
+    ];
+
+    public function stories(): HasMany
+    {
+        return $this->hasMany(StoryMetadata::class, 'music_track_id');
+    }
 }

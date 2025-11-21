@@ -2,21 +2,33 @@
 
 namespace ProNetwork\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class InviteContribution extends Model
+class InviteContribution extends BaseModel
 {
     protected $table = 'pro_network_invite_contributions';
-    protected $fillable = ['user_id','post_id','status'];
 
-    public function user(): BelongsTo
+    protected $fillable = [
+        'inviter_id',
+        'invitee_id',
+        'post_id',
+        'role',
+        'status',
+        'message',
+    ];
+
+    public function inviter(): BelongsTo
     {
-        return $this->belongsTo(config('auth.providers.users.model', \App\Models\User::class));
+        return $this->belongsTo($this->userClass(), 'inviter_id');
+    }
+
+    public function invitee(): BelongsTo
+    {
+        return $this->belongsTo($this->userClass(), 'invitee_id');
     }
 
     public function post(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Post::class);
+        return $this->belongsTo($this->postClass(), 'post_id');
     }
 }
