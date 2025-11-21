@@ -15,6 +15,13 @@ class StoriesApi extends BaseApiService {
         .map((e) => StoryViewer.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
+  Future<List<Story>> fetchStories() async {
+    final data = await get('/api/pro-network/stories');
+    return (data as List)
+        .map((e) => Story.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
 }
 
 class LiveApi extends BaseApiService {

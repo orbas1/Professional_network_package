@@ -47,6 +47,14 @@ class RecommendationsApi extends BaseApiService {
 
   Future<List<RecommendationItem>> recommendedContent() =>
       _fetchList('/api/pro-network/recommendations/content');
+
+  Future<void> respondToRecommendation({
+    required String type,
+    required int id,
+    required String action,
+  }) async {
+    await post('/api/pro-network/recommendations/$type/$id', data: {'action': action});
+  }
 }
 
 class ProfileApi extends BaseApiService {

@@ -3,12 +3,16 @@ class NetworkConnection {
   final int userId;
   final int degree;
   final DateTime? connectedAt;
+  final String? name;
+  final String? title;
 
   const NetworkConnection({
     required this.id,
     required this.userId,
     this.degree = 1,
     this.connectedAt,
+    this.name,
+    this.title,
   });
 
   factory NetworkConnection.fromJson(Map<String, dynamic> json) {
@@ -16,6 +20,8 @@ class NetworkConnection {
       id: json['id'] as int,
       userId: json['user_id'] as int? ?? json['userId'] as int,
       degree: json['degree'] as int? ?? 1,
+      name: json['name'] as String?,
+      title: json['title'] as String? ?? json['headline'] as String?,
       connectedAt: json['connected_at'] != null
           ? DateTime.tryParse(json['connected_at'].toString())
           : null,
@@ -26,6 +32,8 @@ class NetworkConnection {
         'id': id,
         'user_id': userId,
         'degree': degree,
+        if (name != null) 'name': name,
+        if (title != null) 'title': title,
         'connected_at': connectedAt?.toIso8601String(),
       };
 }

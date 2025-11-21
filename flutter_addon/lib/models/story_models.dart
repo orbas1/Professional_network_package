@@ -84,15 +84,21 @@ class StoryMetadata {
 class StoryViewer {
   final int userId;
   final DateTime? viewedAt;
+  final String? name;
+  final String? avatarUrl;
 
   const StoryViewer({
     required this.userId,
     this.viewedAt,
+    this.name,
+    this.avatarUrl,
   });
 
   factory StoryViewer.fromJson(Map<String, dynamic> json) {
     return StoryViewer(
       userId: json['user_id'] as int? ?? json['userId'] as int,
+      name: json['name'] as String?,
+      avatarUrl: json['avatar_url'] as String? ?? json['avatarUrl'] as String?,
       viewedAt: json['viewed_at'] != null
           ? DateTime.tryParse(json['viewed_at'].toString())
           : null,
@@ -101,6 +107,8 @@ class StoryViewer {
 
   Map<String, dynamic> toJson() => {
         'user_id': userId,
+        if (name != null) 'name': name,
+        if (avatarUrl != null) 'avatar_url': avatarUrl,
         'viewed_at': viewedAt?.toIso8601String(),
       };
 }

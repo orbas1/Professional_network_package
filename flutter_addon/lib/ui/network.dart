@@ -26,6 +26,13 @@ class _MyNetworkScreenState extends State<MyNetworkScreen> {
   MyNetworkState get networkState => widget.myNetworkState ?? context.read<MyNetworkState>();
   RecommendationsState get recommendationsState =>
       widget.recommendationsState ?? context.read<RecommendationsState>();
+  int _degreeFilter = 0;
+
+  String _degreeLabel(int degree) {
+    if (degree == 1) return '1st degree';
+    if (degree == 2) return '2nd degree';
+    return '3rd degree';
+  }
 
   @override
   void initState() {
@@ -37,6 +44,7 @@ class _MyNetworkScreenState extends State<MyNetworkScreen> {
   Future<void> _load() async {
     await Future.wait([
       networkState.loadSummary(),
+      networkState.loadConnections(filters: _degreeFilter == 0 ? null : {'degree': _degreeFilter}),
       recommendationsState.load(),
     ]);
   }
@@ -75,8 +83,8 @@ class _MyNetworkScreenState extends State<MyNetworkScreen> {
                   ...network.connections.map(
                     (c) => ListTile(
                       leading: const CircleAvatar(child: Icon(Icons.person)),
-                      title: Text(c.name),
-                      subtitle: Text(c.degree ?? '1st degree'),
+                      title: Text(c.name ?? 'User ${c.userId}'),
+                      subtitle: Text('${c.title ?? ''} • ${_degreeLabel(c.degree)}'),
                     ),
                   ),
                 const SizedBox(height: 16),
@@ -86,10 +94,30 @@ class _MyNetworkScreenState extends State<MyNetworkScreen> {
                 else if (recs.error != null)
                   ErrorView(message: recs.error!, onRetry: recs.load)
                 else ...[
-                  _RecommendationList(title: 'People', items: recs.people),
-                  _RecommendationList(title: 'Companies', items: recs.companies),
-                  _RecommendationList(title: 'Groups', items: recs.groups),
-                  _RecommendationList(title: 'Content', items: recs.content),
+                  _RecommendationList(
+                    title: 'People',
+                    items: recs.people,
+                    state: recommendationsState,
+                    analytics: widget.analytics,
+                  ),
+                  _RecommendationList(
+                    title: 'Companies',
+                    items: recs.companies,
+                    state: recommendationsState,
+                    analytics: widget.analytics,
+                  ),
+                  _RecommendationList(
+                    title: 'Groups',
+                    items: recs.groups,
+                    state: recommendationsState,
+                    analytics: widget.analytics,
+                  ),
+                  _RecommendationList(
+                    title: 'Content',
+                    items: recs.content,
+                    state: recommendationsState,
+                    analytics: widget.analytics,
+                  ),
                 ],
               ],
             );
@@ -112,12 +140,17 @@ class ConnectionsListScreen extends StatefulWidget {
 
 class _ConnectionsListScreenState extends State<ConnectionsListScreen> {
   MyNetworkState get state => widget.state ?? context.read<MyNetworkState>();
+  int _degree = 0;
 
   @override
   void initState() {
     super.initState();
     widget.analytics.trackScreen('ConnectionsList', {});
-    state.loadConnections();
+    _load();
+  }
+
+  Future<void> _load() async {
+    await state.loadConnections(filters: _degree == 0 ? null : {'degree': _degree});
   }
 
   @override
@@ -135,17 +168,49 @@ class _ConnectionsListScreenState extends State<ConnectionsListScreen> {
           if (s.connections.isEmpty) {
             return const EmptyView(message: 'No connections found');
           }
-          return ListView.builder(
-            itemCount: s.connections.length,
-            itemBuilder: (context, index) {
-              final connection = s.connections[index];
-              return ListTile(
-                leading: const CircleAvatar(child: Icon(Icons.person_outline)),
-                title: Text(connection.name),
-                subtitle: Text(connection.degree ?? ''),
-                trailing: Text(connection.title ?? ''),
-              );
-            },
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Wrap(
+                  spacing: 8,
+                  children: [
+                    FilterChip(
+                      label: const Text('All'),
+                      selected: _degree == 0,
+                      onSelected: (_) => setState(() {
+                        _degree = 0;
+                        _load();
+                      }),
+                    ),
+                    ...[1, 2, 3].map(
+                      (d) => FilterChip(
+                        label: Text(_degreeLabel(d)),
+                        selected: _degree == d,
+                        onSelected: (_) => setState(() {
+                          _degree = d;
+                          _load();
+                        }),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: s.connections.length,
+                  itemBuilder: (context, index) {
+                    final connection = s.connections[index];
+                    return ListTile(
+                      leading: const CircleAvatar(child: Icon(Icons.person_outline)),
+                      title: Text(connection.name ?? 'User ${connection.userId}'),
+                      subtitle: Text(connection.title ?? ''),
+                      trailing: Text('${connection.degree}°'),
+                    );
+                  },
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -264,8 +329,15 @@ class _StatCard extends StatelessWidget {
 class _RecommendationList extends StatelessWidget {
   final String title;
   final List<RecommendationItem> items;
+  final RecommendationsState state;
+  final AnalyticsClient analytics;
 
-  const _RecommendationList({required this.title, required this.items});
+  const _RecommendationList({
+    required this.title,
+    required this.items,
+    required this.state,
+    required this.analytics,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -285,8 +357,37 @@ class _RecommendationList extends StatelessWidget {
         ...items.map(
           (item) => ListTile(
             leading: const CircleAvatar(child: Icon(Icons.insights)),
-            title: Text(item.name),
-            subtitle: Text(item.type ?? ''),
+            title: Text(item.title),
+            subtitle: Text(item.subtitle ?? item.type),
+            trailing: Wrap(
+              spacing: 6,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.check_circle_outline),
+                  onPressed: () {
+                    if (item.id != null) {
+                      state.respond(item.type, item.id!, 'accept');
+                      analytics.trackAction('recommendation_accept', {
+                        'type': item.type,
+                        'id': item.id,
+                      });
+                    }
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    if (item.id != null) {
+                      state.respond(item.type, item.id!, 'dismiss');
+                      analytics.trackAction('recommendation_dismiss', {
+                        'type': item.type,
+                        'id': item.id,
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ],

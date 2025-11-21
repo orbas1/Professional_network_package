@@ -72,6 +72,21 @@ class RecommendationsState extends ChangeNotifier {
     });
   }
 
+  Future<void> respond(String type, int id, String action) async {
+    await _guard(() async {
+      await api.respondToRecommendation(type: type, id: id, action: action);
+      if (type == 'people') {
+        people = people.where((p) => p.id != id).toList();
+      } else if (type == 'companies') {
+        companies = companies.where((p) => p.id != id).toList();
+      } else if (type == 'groups') {
+        groups = groups.where((p) => p.id != id).toList();
+      } else {
+        content = content.where((p) => p.id != id).toList();
+      }
+    });
+  }
+
   Future<void> _guard(Future<void> Function() cb) async {
     loading = true;
     error = null;
@@ -256,12 +271,19 @@ class StoriesState extends ChangeNotifier {
   bool loading = false;
   String? error;
   List<StoryViewer> currentViewers = [];
+  List<Story> stories = [];
 
   StoriesState(this.api);
 
   Future<void> loadViewers(int storyId) async {
     await _guard(() async {
       currentViewers = await api.fetchViewers(storyId);
+    });
+  }
+
+  Future<void> loadStories() async {
+    await _guard(() async {
+      stories = await api.fetchStories();
     });
   }
 
