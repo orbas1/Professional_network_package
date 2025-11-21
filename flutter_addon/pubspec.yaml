@@ -1,0 +1,15 @@
+name: pro_network_utilities_security_analytics
+description: Flutter addon for Sociopro professional utilities, security and analytics.
+version: 0.1.0
+environment:
+  sdk: '>=2.17.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.0.0
+  provider: ^6.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
