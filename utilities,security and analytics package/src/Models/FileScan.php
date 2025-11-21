@@ -2,13 +2,21 @@
 
 namespace ProNetwork\Models;
 
-use Illuminate\Database\Eloquent\Model;
-
-class FileScan extends Model
+class FileScan extends BaseModel
 {
     protected $table = 'pro_network_file_scans';
-    protected $fillable = ['path','status','details'];
+
+    protected $fillable = [
+        'path',
+        'file_hash',
+        'scanner_name',
+        'status',
+        'details',
+        'scanned_at',
+    ];
+
     protected $casts = [
         'details' => 'array',
+        'scanned_at' => 'datetime',
     ];
 }

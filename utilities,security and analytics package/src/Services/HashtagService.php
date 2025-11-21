@@ -2,24 +2,31 @@
 
 namespace ProNetwork\Services;
 
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Model;
 use ProNetwork\Models\Hashtag;
+use ProNetwork\Support\Helpers\TagHelper;
 
 class HashtagService
 {
-    public function extract(string $text): array
+    public function parseAndStore(string $content): array
     {
-        preg_match_all('/#(\w+)/u', $text, $matches);
-        return array_map(fn($tag) => Str::lower($tag), $matches[1] ?? []);
+        preg_match_all('/#(\w+)/u', $content, $matches);
+        $tags = $matches[1] ?? [];
+
+        return array_map([TagHelper::class, 'normalize'], $tags);
     }
 
-    public function syncTags($model, array $tags): void
+    public function attachTo(Model $model, string $content): array
     {
-        $ids = [];
-        foreach ($tags as $tag) {
-            $record = Hashtag::firstOrCreate(['tag' => Str::lower($tag)]);
-            $ids[] = $record->id;
-        }
-        $model->hashtags()->sync($ids);
+        $tags = $this->parseAndStore($content);
+        $search = app(SearchTagsDomain::class);
+        $search->attach($model, $tags);
+
+        return $tags;
+    }
+
+    public function find(string $tag): ?Hashtag
+    {
+        return Hashtag::where('normalized', TagHelper::normalize($tag))->first();
     }
 }

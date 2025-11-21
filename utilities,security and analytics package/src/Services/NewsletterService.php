@@ -6,18 +6,19 @@ use ProNetwork\Models\NewsletterSubscription;
 
 class NewsletterService
 {
-    public function subscribe(string $email, ?int $userId = null): NewsletterSubscription
+    public function subscribe(string $email, ?int $userId = null, ?string $source = null): NewsletterSubscription
     {
-        return NewsletterSubscription::updateOrCreate(['email' => $email], [
+        return NewsletterSubscription::updateOrCreate([
+            'email' => $email,
+        ], [
             'user_id' => $userId,
             'subscribed' => true,
+            'source' => $source,
         ]);
     }
 
-    public function unsubscribe(string $email): NewsletterSubscription
+    public function unsubscribe(string $email): void
     {
-        return NewsletterSubscription::updateOrCreate(['email' => $email], [
-            'subscribed' => false,
-        ]);
+        NewsletterSubscription::where('email', $email)->update(['subscribed' => false]);
     }
 }

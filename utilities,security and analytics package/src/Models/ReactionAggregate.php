@@ -2,15 +2,22 @@
 
 namespace ProNetwork\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
-
-class ReactionAggregate extends Model
+class ReactionAggregate extends BaseModel
 {
     protected $table = 'pro_network_reaction_aggregates';
-    protected $fillable = ['reactable_id','reactable_type','score','dislikes'];
 
-    public function reactable(): MorphTo
+    protected $fillable = [
+        'reactable_id',
+        'reactable_type',
+        'counts',
+        'dislikes',
+    ];
+
+    protected $casts = [
+        'counts' => 'array',
+    ];
+
+    public function reactable()
     {
         return $this->morphTo();
     }

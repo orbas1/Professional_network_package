@@ -2,20 +2,46 @@
 
 namespace ProNetwork\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class LiveSession extends Model
+class LiveSession extends BaseModel
 {
     protected $table = 'pro_network_live_sessions';
-    protected $fillable = ['user_id','title','guests','likes','donations','record_to_story'];
-    protected $casts = [
-        'guests' => 'array',
-        'record_to_story' => 'boolean',
+
+    protected $fillable = [
+        'host_id',
+        'title',
+        'description',
+        'status',
+        'guest_user_ids',
+        'likes_count',
+        'donations_total',
+        'chat_channel',
+        'started_at',
+        'ended_at',
+        'recording_path',
     ];
 
-    public function user(): BelongsTo
+    protected $casts = [
+        'guest_user_ids' => 'array',
+        'donations_total' => 'decimal:2',
+        'started_at' => 'datetime',
+        'ended_at' => 'datetime',
+    ];
+
+    public function host(): BelongsTo
     {
-        return $this->belongsTo(config('auth.providers.users.model', \App\Models\User::class));
+        return $this->belongsTo($this->userClass(), 'host_id');
+    }
+
+    public function participants(): HasMany
+    {
+        return $this->hasMany(LiveSessionParticipant::class, 'live_session_id');
+    }
+
+    public function storyMetadata(): HasMany
+    {
+        return $this->hasMany(StoryMetadata::class, 'live_session_id');
     }
 }
