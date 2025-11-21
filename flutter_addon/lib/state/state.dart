@@ -502,6 +502,15 @@ class ChatState extends ChangeNotifier {
     });
   }
 
+  Future<void> sendMessage(int conversationId, Map<String, dynamic> payload) async {
+    await _guard(() async {
+      active = await api.sendMessage(conversationId, payload);
+      conversations = conversations
+          .map((c) => c.id == conversationId ? active! : c)
+          .toList();
+    });
+  }
+
   Future<void> _guard(Future<void> Function() cb) async {
     loading = true;
     error = null;

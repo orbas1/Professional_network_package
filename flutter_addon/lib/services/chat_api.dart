@@ -45,4 +45,12 @@ class ChatApi extends BaseApiService {
   Future<void> declineRequest(int requestId) async {
     await post('/api/pro-network/chat/requests/$requestId/decline');
   }
+
+  Future<ChatConversation> sendMessage(int conversationId, Map<String, dynamic> payload) async {
+    final data = await post(
+      '/api/pro-network/chat/conversations/$conversationId/messages',
+      data: payload,
+    );
+    return ChatConversation.fromJson(data as Map<String, dynamic>);
+  }
 }
